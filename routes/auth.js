@@ -9,7 +9,9 @@ const router = express.Router();
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  message: { error: 'Trop de tentatives, réessaie plus tard' }
+  standardHeaders: true,
+  legacyHeaders: false,
+  trustProxy: true
 });
 
 router.post('/signup', authLimiter, async (req, res) => {
