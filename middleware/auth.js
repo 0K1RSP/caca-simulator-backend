@@ -1,6 +1,33 @@
+const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 
+// Vérifie le token
+function authMiddleware(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ error: 'Token manquant' });
+
+  const token = authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Token invalide' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded; // username + isAdmin
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Token invalide' });
+  }
+}
+
+// Vérifie si admin
+function adminMiddleware(req, res, next) {
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({ error: 'Accès refusé' });
+  }
+  next();
+}
+
+// Création auto de l’admin
 async function ensureAdminExists() {
   const ADMIN_USER = process.env.ADMIN_USER;
   const ADMIN_PASS = process.env.ADMIN_PASS;
@@ -25,5 +52,8 @@ async function ensureAdminExists() {
   }
 }
 
-module.exports = { ensureAdminExists };
-
+module.exports = {
+  authMiddleware,
+  adminMiddleware,
+  ensureAdminExists
+};
